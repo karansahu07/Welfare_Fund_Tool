@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     }
 
     const plainPassword = generateRandomHexPassword();
-    // const hashedPassword = await bcrypt.hash(plainPassword, 10);
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     const newUser = await User.create({
       firstName,
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       dob,
       dateOfJoining,
       dateOfResigning,
-      password: plainPassword,
+      password: hashedPassword,
       role: 'employee',
       isActive: true
     });
@@ -108,11 +108,16 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
+    const status = searchParams.get('filter');
     const limit = parseInt(searchParams.get('limit') || '10');
 
     await dbConnect();
 
-    let query = { role: 'employee' };
+    let query:any = { role: 'employee' };
+    if (status !== "all") {
+      const isActive = status == "active"
+      query.isActive = isActive
+    }
 
     if (limit === -1) {
       const allEmployees = await User.find(query).lean();
@@ -139,6 +144,7 @@ export async function GET(req: NextRequest) {
       }),
       { status: 200 }
     );
+    //mute rkhna
   } catch (err: any) {
     console.error(err);
     return Response.json(new ApiResponse(false, 'Failed to fetch employees', []), { status: 500 });

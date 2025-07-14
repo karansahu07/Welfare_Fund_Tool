@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import CryptoJS from "crypto-js";
-import { toJS } from "mobx";
+import { makeAutoObservable, toJS } from "mobx";
 import {
   action,
   autorun,
@@ -19,7 +19,7 @@ axios.defaults.withCredentials = true;
 const SECRET_KEY = "your-secret-key";
 
 const initialUser = {
-  role: "guest",
+  role: "",
   username: "",
   useremail: "",
   email: "",
@@ -46,19 +46,10 @@ class AuthStore {
     message: null,
   };
    logoutRedirecting = false; //  Add this line here
-  lastRole: any;
+  // lastRole: any;
 
   constructor() {
-    makeObservable(this, {
-      login: action,
-      logout: action,
-      initialize: action,
-      setAuthError: action,
-      auth: observable,
-      logoutRedirecting: observable, // 👈 Add this
-      getRole: computed,
-      getUser: computed,
-    });
+   makeAutoObservable(this)
 
     if (typeof window !== "undefined") {
       this.loadFromLocalStorage();
@@ -192,7 +183,7 @@ class AuthStore {
       });
 
         // ✅ Save auth state to localStorage after successful login
-    this.saveToLocalStorage(); // <--- ADD THIS LINE
+    // this.saveToLocalStorage(); // <--- ADD THIS LINE
 
     } catch (error: any) {
       runInAction(() => {
@@ -247,7 +238,7 @@ async logout() {
   }
 
   get getRole() {
-    return this.auth.user.role || "guest";
+    return this.auth.user.role || "";
   }
 
   get getUser() {

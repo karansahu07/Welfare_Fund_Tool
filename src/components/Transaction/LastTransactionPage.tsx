@@ -1,42 +1,100 @@
 "use client";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useEffect, useState } from "react";
 
-const transactions = [
-  { name: "Rahul", pid: "97897874487", date: "2025-04-15", time: "10:30 AM", srnshoot: "image" },
-  { name: "Aman", pid: "8974874874", date: "2025-04-10", time: "09:15 AM", srnshoot: "image" },
-  { name: "Sahil", pid: "59659789877", date: "2025-04-05", time: "11:45 AM", srnshoot: "image" },
-  { name: "Gaurav", pid: "8598598598", date: "2025-04-01", time: "02:30 PM", srnshoot: "image" },
-  { name: "Chirag", pid: "7548878787", date: "2025-05-01", time: "03:45 PM", srnshoot: "image" },
-];
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import useApiCall from "@/hooks/useApiCall";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import ImageModal from "../ImageModal";
 
 type Txn = {
-  name: string;
-  pid: string;
+  username: string;
+  userId: string;
+  utr: string;
+  amount: number;
+  status: string;
+  screenshotUrl: string;
   date: string;
-  time: string;
-  srnshoot: string;
 };
+
+type Employee = {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+};
+
+const getYearsArray = () => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+
+  for (let i = currentYear - 4; i <= currentYear + 2; i++) {
+    years.push(i.toString());
+  }
+  return years;
+}
+
 export default function LastTransactionPage() {
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
-  const [filteredTxns, setFilteredTxns] = useState<Txn[]>([]);
+  const [transactions, setTransactions] = useState<Txn[]>([]);
+  const [fetchState, fetchTransactions] = useApiCall('/api/payments')
+  const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth() + 1).padStart(2, "0"));
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalImage, setModalImage] = useState("");
 
   useEffect(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    setSelectedYear(String(year));
-    setSelectedMonth(month);
-  }, []);
-
-  useEffect(() => {
-    const filtered = transactions.filter((txn) => {
-      const [txnYear, txnMonth] = txn.date.split("-").slice(0, 2);
-      return txnYear === selectedYear && txnMonth === selectedMonth;
-    });
-    setFilteredTxns(filtered);
+    const fetchData = async () => {
+      const data = await fetchTransactions({ month: selectedMonth, year: selectedYear });
+      setTransactions(data);
+      console.log("data usid", data);
+    }
+    fetchData();
   }, [selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    if (fetchState.isSuccess) {
+      toast.success("data load success")
+    }
+  }, [fetchState.isLoading])
+
+  // const fetchTransactions = async () => {
+  //   try {
+  //     const res = await fetch("/api/payments");
+  //     const data = await res.json();
+  //     setTransactions(data);
+  //   } catch (err) {
+  //     console.error("Failed to fetch payments:", err);
+  //   }
+  // };
+
+  // const fetchEmployees = async () => {
+  //   try {
+  //     const res = await fetch("/api/employees");
+  //     const data = await res.json();
+  //     setEmployees(data?.data || []);
+  //   } catch (err) {
+  //     console.error("Failed to fetch employees:", err);
+  //   }
+  // };
+
+
+
+
+  const openModal = (img: string) => {
+    setModalImage(img);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalImage("");
+  };
 
   const months = [
     { value: "01", label: "January" },
@@ -53,7 +111,7 @@ export default function LastTransactionPage() {
     { value: "12", label: "December" },
   ];
 
-  const years = ["2025", "2024", "2023"];
+  const years = getYearsArray();
 
   return (
     <div className="flex-1 space-y-4">
@@ -76,7 +134,7 @@ export default function LastTransactionPage() {
             </select>
             <select
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
+              onChange={(e: any) => setSelectedYear(e.target.value)}
               className="rounded border border-gray-300 dark:border-gray-500 p-2 bg-white dark:bg-gray-700 text-sm"
             >
               {years.map((year) => (
@@ -92,37 +150,75 @@ export default function LastTransactionPage() {
           <Table>
             <TableHeader className="bg-indigo-100 dark:bg-indigo-900">
               <TableRow>
-                <TableHead className="text-indigo-900 dark:text-indigo-100 font-semibold">Name</TableHead>
-                <TableHead className="text-indigo-900 dark:text-indigo-100 font-semibold">Payment ID</TableHead>
-                <TableHead className="text-indigo-900 dark:text-indigo-100 font-semibold">Date & Time</TableHead>
-                <TableHead className="text-indigo-900 dark:text-indigo-100 font-semibold">Screenshot</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>UTR / Payment ID</TableHead>
+                <TableHead>Amount (₹)</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date & Time</TableHead>
+                <TableHead>Screenshot</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTxns.length > 0 ? (
-                filteredTxns.map((txn, index) => (
-                  <TableRow
-                    key={index}
-                    className={index % 2 === 0 ? "bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700" : "bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"}
-                  >
-                    <TableCell className="p-4 font-medium text-gray-800 dark:text-gray-100">{txn.name}</TableCell>
-                    <TableCell className="p-4 text-blue-700 dark:text-blue-300">{txn.pid}</TableCell>
-                    <TableCell className="p-4">
-                      <span className="bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200 px-2 py-1 rounded text-xs">
-                        {`${txn.date} ${txn.time}`}
-                      </span>
-                    </TableCell>
-                    <TableCell className="p-4">
-                      <span className="bg-purple-100 text-purple-800 dark:bg-purple-700 dark:text-purple-200 px-2 py-1 rounded text-xs">
-                        {txn.srnshoot}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
+              {transactions?.length > 0 && (
+                transactions.map((txn, index) => {
+                  // const hasPaid = Boolean(txn);
+                  // const status = hasPaid ? "paid" : "pending";
+                  // const screenshotUrl = hasPaid ? txn?.screenshotUrl : "";
+                  const dateStr = txn.date
+                    ? new Date(txn!.date).toLocaleDateString()
+                    : "-";
+                  const timeStr = txn.date
+                    ? new Date(txn!.date).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                    : "-";
+
+                  return (
+                    <TableRow key={index}>
+                      <TableCell>
+                        {txn.username}
+                      </TableCell>
+                      <TableCell>{txn?.utr || "-"}</TableCell>
+                      <TableCell>
+                        {txn?.amount ? `₹${txn.amount}` : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${txn.status === "paid"
+                            ? "bg-green-200 text-green-800"
+                            : "bg-yellow-200 text-yellow-800"
+                            }`}
+                        >
+                          {txn.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-gray-700 dark:text-gray-200">
+                          {dateStr} {timeStr}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {txn.screenshotUrl ? (
+                          <img
+                            src={txn.screenshotUrl}
+                            alt="Screenshot"
+                            onClick={() => openModal(txn.screenshotUrl)}
+                            className="h-16 w-auto rounded shadow-md cursor-pointer hover:scale-105 transition-transform duration-200"
+                          />
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}{
+                fetchState.isLoading &&
+                (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center p-4 text-gray-500">
-                    No transactions found for the selected month/year.
+                  <TableCell colSpan={6} className="text-center text-gray-500 p-4">
+                    Loading....
                   </TableCell>
                 </TableRow>
               )}
@@ -130,6 +226,23 @@ export default function LastTransactionPage() {
           </Table>
         </div>
       </div>
+
+      {/* Modal for Screenshot Preview */}
+      <ImageModal open={modalOpen} onClose={closeModal} imageSrc={modalImage} />
+      {/* {modalOpen && (
+        <div
+          onClick={closeModal}
+          className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"
+        >
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-3xl max-h-[90vh] overflow-auto">
+            <img
+              src={modalImage}
+              alt="Full Screenshot"
+              className="w-full h-auto rounded"
+            />
+          </div>
+        </div>
+      )} */}
     </div>
   );
 }

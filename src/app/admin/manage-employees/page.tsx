@@ -169,10 +169,10 @@
 
 
 
- "use client";
+"use client";
 
 import { useEffect, useState } from "react";
-import { Eye, Pencil } from "lucide-react";
+import { ArrowBigUpDashIcon, Eye, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -182,6 +182,7 @@ import { FieldConfig, ModalForm } from "@/components/ModalForm";
 import { ConfigDrivenTable } from "@/components/ConfigDrivenTable";
 // import { FieldConfig } from "formik";
 import * as Yup from "yup"
+import useApiCall from "@/hooks/useApiCall";
 
 interface Employee {
   _id?: string;
@@ -216,55 +217,36 @@ const validationSchema = Yup.object({
 
 export default function EmployeesPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalDocs, setTotalDocs] = useState(0);
   const rowsPerPage = 50;
-
+  const [filter, setFilter] = useState("active")
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ totalPages: 0, totalRecords: 0, currentPage: 0 })
+  const [fetcState, fetchEmployees] = useApiCall("/api/employees")
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
 
   const [openForm, setopenForm] = useState<any>(null);
   const [editValues, setEditValues] = useState<any>(initialValues);
   const [updating, setUpdating] = useState<boolean>(false)
 
-  useEffect(() => {
-    const today = new Date();
-    setSelectedMonth(String(today.getMonth() + 1).padStart(2, "0"));
-    setSelectedYear(String(today.getFullYear()));
-  }, []);
+
 
   useEffect(() => {
-  fetchEmployees();
-}, [updating, currentPage]);
-
-useEffect(() => {
-  setCurrentPage(1);
-}, [searchTerm, selectedMonth, selectedYear]);
-
-
-const fetchEmployees = async (page = currentPage, limit = rowsPerPage) => {
-  setLoading(true);
-  try {
-    const response = await fetch(`/api/employees?page=${page}&limit=${limit}`);
-    const result = await response.json();
-    if (response.ok) {
-      setEmployees(() => [...result.data]);
-      setTotalPages(Math.ceil(result.pagination.totalRecords / limit));
-      setTotalDocs(result.pagination.totalRecords || 0);
-      setCurrentPage(result.pagination.currentPage || page);
-    } else {
-      toast.error("Failed to load employees!");
+    const fetchData = async () => {
+      const res = await fetchEmployees({ filter, page: currentPage, limit: rowsPerPage });
+      setEmployees(res.data)
+      setPagination(res.pagination)
     }
-  } catch (err: any) {
-    console.error(err);
-    toast.error(`Error occurred: ${err.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
+
+    fetchData()
+  }, [updating, currentPage, rowsPerPage, filter]); //ye part dekh lena
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+
+
   const handleEdit = (row: Employee) => {
     setEditValues({ ...row, status: row?.isActive ? "active" : "inactive", });
     setopenForm("edit");
@@ -363,66 +345,6 @@ const fetchEmployees = async (page = currentPage, limit = rowsPerPage) => {
     },
   ]
 
-// 1. Filter employees by search term (prioritize startsWith match)
-const search = searchTerm.toLowerCase();
-
-const startsWithMatches = employees.filter((e) => {
-  const fullName = `${e.firstName} ${e.lastName}`.toLowerCase();
-  return fullName.startsWith(search);
-});
-
-const containsMatches = employees.filter((e) => {
-  const fullName = `${e.firstName} ${e.lastName}`.toLowerCase();
-  return !fullName.startsWith(search) && fullName.includes(search);
-});
-
-const filteredBySearch = [...startsWithMatches, ...containsMatches];
-
-// 2. Further filter by selected month and year
-const filteredEmployees = filteredBySearch.filter((e) => {
-  if (!e.createdAt) return false;
-  const date = new Date(e.createdAt);
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = String(date.getFullYear());
-
-  const matchMonth = !selectedMonth || month === selectedMonth;
-  const matchYear = !selectedYear || year === selectedYear;
-
-  return matchMonth && matchYear;
-});
-
-// 3. Slice data for current page (pagination)
-const paginatedEmployees = filteredEmployees.slice(
-  (currentPage - 1) * rowsPerPage,
-  currentPage * rowsPerPage
-);
-
-// 4. Generate unique years from employees' createdAt
-const uniqueYears = Array.from(
-  new Set(
-    employees
-      .map((e) =>
-        e.createdAt ? new Date(e.createdAt).getFullYear().toString() : ""
-      )
-      .filter((y) => y !== "")
-  )
-);
-
-// 5. Month options for dropdown
-const months = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
-];
 
 
   return (
@@ -433,29 +355,17 @@ const months = [
           <h2 className="text-3xl font-bold">Manage Employees & Track</h2>
           <div className="flex gap-2 items-center">
             <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="border rounded p-2"
-            >
-              <option value="">All Months</option>
-              {months.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="border rounded p-2"
-            >
-              <option value="">All Years</option>
-              {uniqueYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
+  value={filter}
+  onChange={(e) => setFilter(e.target.value)}
+  className="border rounded px-2 py-1"
+>
+  {["active", "inactive", "all"].map((item) => (
+    <option key={item} value={item}>
+      {item.toUpperCase()}
+    </option>
+  ))}
+</select>
+
           </div>
         </div>
 
@@ -468,14 +378,14 @@ const months = [
         </div>
 
         <div className="rounded-md border">
-<ConfigDrivenTable
-  columnStructure={columns}
-  currentPage={currentPage}
-  totalDocs={filteredEmployees.length}
-  totalPages={Math.ceil(filteredEmployees.length / rowsPerPage)}
-  onPageChange={(page: number) => setCurrentPage(page)}
-  sourceData={paginatedEmployees} // ✅ sliced data for current page only
-/>
+          <ConfigDrivenTable
+            columnStructure={columns}
+            currentPage={currentPage}
+            totalDocs={pagination.totalRecords}
+            totalPages={pagination.totalPages}
+            onPageChange={(page: number) => setCurrentPage(page)}
+            sourceData={employees}
+            loading={fetcState.isLoading} />
 
 
 
@@ -489,7 +399,7 @@ const months = [
             title={openForm == "edit" ? "Edit Employee" : "view"}
             initialValues={editValues}
             columns={2}
-            loading={loading || updating}
+            loading={fetcState.isLoading || updating}
             fields={fields.map(f => (openForm == "edit" ? { ...f, disabled: false } : { ...f, disabled: true })) as unknown as FieldConfig[]}
             onReset={() => setopenForm(false)}
             onSubmit={updateEmployee}
