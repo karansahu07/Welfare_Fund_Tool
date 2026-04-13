@@ -14,7 +14,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 
 async function getNavAndSave() {
-  const schemeCode = '119721';
+  const schemeCode = '122639';
   const url = `https://api.mfapi.in/mf/${schemeCode}`;
 
   try {

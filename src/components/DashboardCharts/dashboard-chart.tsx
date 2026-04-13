@@ -15,7 +15,7 @@ XAxis,
 YAxis,
 } from "@/components/ui/chart"
 
-const lineChartData = [
+const defaultLineData = [
 { name: "Jan", value: 4000 },
 { name: "Feb", value: 3000 },
 { name: "Mar", value: 5000 },
@@ -30,23 +30,31 @@ const lineChartData = [
 { name: "Dec", value: 12000 },
 ]
 
-const pieChartData = [
+const defaultPieData = [
 { name: "Invested Value", value: 60000, color: "#0ea5e9" },
 { name: "Profit", value: 15000, color: "#22c55e" },
-{ name: "Total Value", value: 75000, color: "#8b5cf6" },
 ]
 
-export function LineChartComponent() {
+interface LineChartProps {
+  data?: { name: string; value: number }[];
+}
+
+interface PieChartProps {
+  data?: { name: string; value: number; color: string }[];
+}
+
+export function LineChartComponent({ data }: LineChartProps) {
+const chartData = data && data.length > 0 ? data : defaultLineData;
 return (
   <Card className="col-span-3">
     <CardHeader>
-      <CardTitle>Investment Growth</CardTitle>
-      <CardDescription>Monthly investment growth over the past year</CardDescription>
+      <CardTitle>NAV Growth</CardTitle>
+      <CardDescription>Daily NAV trend (₹ per unit)</CardDescription>
 
 </CardHeader>
 <CardContent>
   <ResponsiveContainer width="100%" height={300}>
-    <AreaChart data={lineChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
       <defs>
         <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
           <stop offset="5%" stopColor="#008000" stopOpacity={0.8} />
@@ -65,18 +73,19 @@ return (
 )
 }
 
-export function PieChartComponent() {
+export function PieChartComponent({ data }: PieChartProps) {
+    const pieData = data && data.length > 0 ? data : defaultPieData;
     return (
       <Card className="col-span-2">
         <CardHeader>
           <CardTitle>Fund Distribution</CardTitle>
-          <CardDescription>Breakdown of fund allocation</CardDescription>
+          <CardDescription>Invested vs Profit</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={pieChartData}
+                data={pieData}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
@@ -85,7 +94,7 @@ export function PieChartComponent() {
                 dataKey="value"
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               >
-                {pieChartData.map((entry, index) => (
+                {pieData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>

@@ -1,13 +1,12 @@
 import mongoose from 'mongoose';
 
 const investmentRecordSchema = new mongoose.Schema({
-  employeeId: {
-    type: mongoose.Schema.Types.ObjectId, // or String, depending on your auth system
+  userId: {
+    type: Number, // numeric user_id from User model
     required: true,
-    ref: 'employee'
   },
   schemeCode: {
-    type: String, // Mutual Fund Scheme code like "119721"
+    type: String,
     required: true,
   },
   unitsPurchased: {
@@ -26,6 +25,7 @@ const investmentRecordSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   }
-});
+}, { timestamps: true });
 
-export default mongoose.model('InvestmentRecord', investmentRecordSchema);
+export default mongoose.models.InvestmentRecord ||
+  mongoose.model('InvestmentRecord', investmentRecordSchema);

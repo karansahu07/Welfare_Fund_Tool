@@ -23,4 +23,5 @@ const navHistorySchema = new mongoose.Schema({
   }
 });
 
-export default mongoose.model('NavHistory', navHistorySchema);
+export default mongoose.models.NavHistory ||
+  mongoose.model('NavHistory', navHistorySchema);

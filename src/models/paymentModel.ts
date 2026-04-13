@@ -8,6 +8,7 @@ const paymentSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     screenshotUrl: { type: String, required: true },
     status: { type: String, default: 'paid' },
+    paymentDate: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

@@ -87,15 +87,21 @@ export async function POST(req: NextRequest) {
       dob,
       dateOfJoining,
       dateOfResigning,
-      password: hashedPassword,
+      password: plainPassword,
       role: 'employee',
       isActive: true
     });
 
-    await sendAccountEmail(email, plainPassword);
+    let emailSent = false;
+    try {
+      await sendAccountEmail(email, plainPassword);
+      emailSent = true;
+    } catch (mailErr: any) {
+      console.error('Mail send failed:', mailErr.message);
+    }
 
     return Response.json(
-      new ApiResponse(true, 'Employee created and email sent', { userId: newUser._id }),
+      new ApiResponse(true, emailSent ? 'Employee created and email sent' : 'Employee created (email failed)', { userId: newUser._id }),
       { status: 201 }
     );
   } catch (err: any) {

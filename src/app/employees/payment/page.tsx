@@ -1,16 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CloudUpload } from 'lucide-react';
+import { CloudUpload, CalendarDays } from 'lucide-react';
 import CryptoJS from 'crypto-js';
 
 export default function PaymentPage() {
   const [utrId, setUtrId] = useState('');
+  const [amount, setAmount] = useState('');
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [userId, setUserId] = useState('');
+  const today = new Date().toISOString().split('T')[0];
+  const [paymentDate, setPaymentDate] = useState(today);
 
   useEffect(() => {
     const storedName = localStorage.getItem('userName');
@@ -67,8 +70,9 @@ export default function PaymentPage() {
     formData.append('utr', utrId);
     formData.append('name', userName || 'Anonymous');
     formData.append('email', userEmail || 'anonymous@example.com');
-    formData.append('userId', userId || ''); // ✅ Added userId field
-    formData.append('amount', '1000');
+    formData.append('userId', userId || '');
+    formData.append('amount', amount);
+    formData.append('paymentDate', paymentDate);
     formData.append('screenshot', screenshot);
 
     try {
@@ -79,8 +83,13 @@ export default function PaymentPage() {
 
       const data = await res.json();
       if (res.ok) {
-        alert('Transaction saved successfully!');
+        if (data.navStatus === 'allocated') {
+          alert(`Payment saved! ✅\nUnits allocated: ${Number(data.unitsAllocated).toFixed(4)}\nNAV used: ₹${data.navUsed} (${data.navDate})`);
+        } else {
+          alert("Payment saved! ⏳\nNo NAV available for the selected date. Units will be allocated once NAV data is available.");
+        }
         setUtrId('');
+        setAmount('');
         setScreenshot(null);
         setPreview(null);
       } else {
@@ -102,6 +111,25 @@ export default function PaymentPage() {
           💳 UTR / Payment Submission
         </h2>
 
+        {/* Payment Date Picker */}
+        <div className="mb-6">
+          <label className="block text-lg text-gray-700 font-semibold mb-2">
+            <CalendarDays className="inline-block mr-2 text-blue-500" size={20} />
+            Payment Date
+          </label>
+          <input
+            type="date"
+            value={paymentDate}
+            onChange={(e) => setPaymentDate(e.target.value)}
+            max={today}
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none text-gray-800 text-base"
+            required
+          />
+          {paymentDate !== today && (
+            <p className="text-sm text-amber-600 mt-1">⚠️ You are submitting for a past date: {new Date(paymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+          )}
+        </div>
+
         {/* UTR Input */}
         <div className="mb-6">
           <label className="block text-lg text-gray-700 font-semibold mb-2">
@@ -117,16 +145,19 @@ export default function PaymentPage() {
           />
         </div>
 
-        {/* Amount (Fixed) */}
+        {/* Amount */}
         <div className="mb-6">
           <label className="block text-lg text-gray-700 font-semibold mb-2">
             Amount (₹)
           </label>
           <input
             type="number"
-            value="1000"
-            readOnly
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-700"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="e.g. 1000"
+            min="1"
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none text-gray-800 text-base"
+            required
           />
         </div>
 
