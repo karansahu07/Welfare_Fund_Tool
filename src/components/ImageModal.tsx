@@ -121,6 +121,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
                   </div>
 
                   <TransformComponent>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imageSrc}
                       alt="POD"

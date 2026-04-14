@@ -55,12 +55,14 @@ export default function LastTransactionPage() {
       console.log("data usid", data);
     }
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
     if (fetchState.isSuccess) {
       toast.success("data load success")
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchState.isLoading])
 
   // const fetchTransactions = async () => {
@@ -200,6 +202,7 @@ export default function LastTransactionPage() {
                       </TableCell>
                       <TableCell>
                         {txn.screenshotUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={txn.screenshotUrl}
                             alt="Screenshot"

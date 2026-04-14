@@ -239,6 +239,7 @@ export default function EmployeesPage() {
     }
 
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updating, currentPage, rowsPerPage, filter]); //ye part dekh lena
 
   useEffect(() => {

@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const authStore = useMemo(() => new AuthStore(), []);
   const pathname = usePathname();
   const router = useRouter();
-  const unProtectedRoutes = ["/", "/sign-in/employee", "/sign-in/admin"];
+  const unProtectedRoutes = useMemo(() => ["/", "/sign-in/employee", "/sign-in/admin"], []);
 
 useEffect(() => {
   const initAuth = async () => {

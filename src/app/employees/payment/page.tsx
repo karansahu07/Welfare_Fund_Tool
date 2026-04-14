@@ -184,7 +184,8 @@ export default function PaymentPage() {
         {preview && (
           <div className="mb-6">
             <p className="text-gray-600 mb-2 font-medium">Preview:</p>
-            <img
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
               src={preview}
               alt="Payment Screenshot Preview"
               className="w-full max-h-96 object-contain rounded-lg border shadow-md"
